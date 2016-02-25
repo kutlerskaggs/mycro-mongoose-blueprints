@@ -1,0 +1,37 @@
+{
+  "name": "mycro-mongoose-blueprints",
+  "version": "0.0.0",
+  "description": "REST/blueprints for mycro-mongoose",
+  "main": "index.js",
+  "scripts": {
+    "test": "mocha test/tests/bootstrap.test.js test/tests/**/*.test.js --recursive"
+  },
+  "keywords": [
+    "mycro",
+    "mongoose",
+    "mycro-mongoose",
+    "rest",
+    "blueprints"
+  ],
+  "author": "chris ludden",
+  "license": "MIT",
+  "dependencies": {
+    "async": "^1.5.2",
+    "include-all": "^0.1.6",
+    "joi": "^8.0.2",
+    "lodash": "^4.5.1"
+  },
+  "devDependencies": {
+    "chai": "^3.5.0",
+    "faker": "^3.0.1",
+    "grunt": "^0.4.5",
+    "grunt-mocha-istanbul": "^3.0.1",
+    "istanbul": "^0.4.2",
+    "mocha": "^2.4.5",
+    "mycro": "^0.3.2",
+    "mycro-mongoose": "^0.1.1",
+    "sinon": "^1.17.3",
+    "sinon-chai": "^2.8.0",
+    "supertest": "^1.2.0"
+  }
+}
