@@ -4,23 +4,37 @@ module.exports = function(mycro) {
     return {
         'v1.0.0': {
             '/api': {
-                '/groups': {
-                    options: {
-                        model: 'groups'
+                policies: [
+                    'authenticated'
+                ],
+                '/posts': {
+                    '/disable-filter': {
+                        get: 'posts.findFilterDisable'
                     },
-                    get: 'mongoose.find'
+                    '/server-filter': {
+                        get: 'posts.findFilterServer'
+                    }
                 },
                 '/users': {
-                    options: {
-                        model: 'users',
-                        blacklist: ['department'],
-                        processQuery(query, cb) {
-                            query.where('first').equals('tim');
-                            console.log(query);
-                            cb();
-                        }
+                    get: {
+                        additionalPolicies: [
+                            mycro.policies.validate('query', function(joi) {
+                                return joi.object({
+                                    filter: joi.object({
+                                        first: joi.any(),
+                                        last: joi.any(),
+                                        email: joi.any(),
+                                        department: joi.any(),
+                                        status: joi.any()
+                                    }).unknown(false)
+                                });
+                            })
+                        ],
+                        handler: 'users.find'
                     },
-                    get: 'mongoose.find'
+                    '/whitelist': {
+                        get: 'users.findFilterWhitelist'
+                    }
                 }
             },
             '/health': {
