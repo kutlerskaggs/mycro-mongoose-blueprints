@@ -9,9 +9,48 @@ var async = require('async'),
 
 describe('find', function() {
     let defaultHeaders = { 'accept-version': '^1.0.0' };
+    let kanye, tim;
+
+    before(function(done) {
+        async.parallel({
+            kanye: function findKanye(fn) {
+                mycro.models.users.findOne({first: 'kanye', last: 'west'}, function(err, user) {
+                    kanye = user;
+                    fn(err);
+                });
+            },
+            tim: function findTim(fn) {
+                mycro.models.users.findOne({first: 'tim', last: 'tebow'}, function(err, user) {
+                    tim = user;
+                    fn(err);
+                });
+            }
+        }, done);
+    });
 
     context('fields', function() {
-        it('should allow the server to disable field selection for primary and related resources');
+        it('should allow the server to disable field selection', function(done) {
+            async.parallel([
+                function(fn) {
+                    request.get('/api/users/fields-disabled?' + qs.stringify({
+                            fields: {
+                                users: 'first,last'
+                            }
+                        }))
+                        .set(_.merge({'x-user-id': kanye.id}, defaultHeaders))
+                        .expect(200)
+                        .expect(function(res) {
+                            let allFields = _(res.body.data).map('attributes').map(function(attributes) {
+                                return _.keys(attributes);
+                            }).flatten().uniq().value();
+                            expect(allFields).to.contain('status');
+                        })
+                        .end(fn);
+                }
+            ], done);
+        });
+
+
         it('should allow the server to whitelist fields for selection/exclusion');
         it('should allow the server to blacklist fields for selection/exclusion');
         it('should enforce a whitelist over a blacklist');
@@ -20,33 +59,17 @@ describe('find', function() {
     });
 
     context('page', function() {
-        it('should allow the server to explicitly control pagination');
+        it('should allow the server to explicitly control pagination', function(done) {
+
+        });
+        
         it('should allow the server to set allowed pagination settings');
         it('should allow the server to explicitly control pagination of related resources');
         it('should allow the server to set allowed pagination settings of related resources');
     });
 
+
     context('filter', function() {
-        let kanye, tim;
-
-        before(function(done) {
-            async.parallel({
-                kanye: function findKanye(fn) {
-                    mycro.models.users.findOne({first: 'kanye', last: 'west'}, function(err, user) {
-                        kanye = user;
-                        fn(err);
-                    });
-                },
-                tim: function findTim(fn) {
-                    mycro.models.users.findOne({first: 'tim', last: 'tebow'}, function(err, user) {
-                        tim = user;
-                        fn(err);
-                    });
-                }
-            }, done);
-        });
-
-
         it('should allow the server to disable filters', function(done) {
             async.parallel([
                 function noFilters(fn) {
@@ -177,7 +200,7 @@ describe('find', function() {
                         },
 
                         test: ['count', function execTest(_fn, r) {
-                            request.get('/api/users/whitelist?' + qs.stringify({
+                            request.get('/api/users/blacklist?' + qs.stringify({
                                     filter: {
                                         department: 'accounting'
                                     }
@@ -201,7 +224,7 @@ describe('find', function() {
                         },
 
                         test: ['count', function execTest(_fn, r) {
-                            request.get('/api/users/whitelist?' + qs.stringify({
+                            request.get('/api/users/blacklist?' + qs.stringify({
                                     filter: {
                                         first: 'jeff',
                                         department: 'random'
@@ -210,6 +233,9 @@ describe('find', function() {
                                 .set(_.merge({'x-user-id': kanye.id}, defaultHeaders))
                                 .expect(200)
                                 .expect(function(res) {
+                                    if (res.body.data.length !== r.count) {
+                                        console.log('some blacklisted filters');
+                                    }
                                     expect(res.body.data).to.be.an('array').with.lengthOf(r.count);
                                 })
                                 .end(_fn);
@@ -226,7 +252,7 @@ describe('find', function() {
                         },
 
                         test: ['count', function execTest(_fn, r) {
-                            request.get('/api/users/whitelist?' + qs.stringify({
+                            request.get('/api/users/blacklist?' + qs.stringify({
                                     filter: {
                                         status: 'active'
                                     }
@@ -245,6 +271,52 @@ describe('find', function() {
 
 
         it('should allow the server to set filters', function(done) {
+            async.parallel([
+                function noFilters(fn) {
+                    request.get('/api/posts/server-options')
+                        .set(_.merge({'x-user-id': kanye._id}, defaultHeaders))
+                        .expect(200)
+                        .expect(function(res) {
+                            expect(_(res.body.data).map('relationships.author.data.id').uniq().value()).to.eql([kanye.id]);
+                        })
+                        .end(fn);
+                },
+
+                function invalidFilters(fn) {
+                    request.get('/api/posts/server-options?' + qs.stringify({
+                            filter: {
+                                author: tim.id
+                            }
+                        }))
+                        .set(_.merge({'x-user-id': kanye._id}, defaultHeaders))
+                        .expect(200)
+                        .expect(function(res) {
+                            expect(_(res.body.data).map('relationships.author.data.id').uniq().value()).to.eql([kanye.id]);
+                        })
+                        .end(fn);
+                },
+
+                function validFilters(fn) {
+                    request.get('/api/posts/server-options?' + qs.stringify({
+                            filter: {
+                                status: 'published'
+                            }
+                        }))
+                        .set(_.merge({'x-user-id': kanye._id}, defaultHeaders))
+                        .expect(200)
+                        .expect(function(res) {
+                            if (res.body.data.length) {
+                                expect(_(res.body.data).map('relationships.author.data.id').uniq().value()).to.eql([kanye.id]);
+                                expect(_(res.body.data).map('attributes.status').uniq().value()).to.eql(['published']);
+                            }
+                        })
+                        .end(fn);
+                }
+            ], done);
+        });
+
+
+        it('should allow the server to process the query before it\'s executed', function(done) {
             async.parallel([
                 function noUserFilter(fn) {
                     request.get('/api/posts/server-filter')
@@ -293,9 +365,6 @@ describe('find', function() {
                 }
             ], done);
         });
-
-
-        it('should allow the server to process the query before it\'s executed');
     });
 
     context('include', function() {

@@ -5,5 +5,8 @@ module.exports = function(req, res, next) {
         res.json(401, 'Unauthorized');
         return next(false);
     }
+    req.user = {
+        id: req.headers['x-user-id']
+    };
     next();
 };

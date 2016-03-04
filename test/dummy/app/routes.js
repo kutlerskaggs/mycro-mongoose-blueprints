@@ -13,24 +13,20 @@ module.exports = function(mycro) {
                     },
                     '/server-filter': {
                         get: 'posts.findFilterServer'
+                    },
+                    '/server-options': {
+                        additionalPolicies: [
+                            'owner'
+                        ],
+                        get: 'posts.find'
                     }
                 },
                 '/users': {
-                    get: {
-                        additionalPolicies: [
-                            mycro.policies.validate('query', function(joi) {
-                                return joi.object({
-                                    filter: joi.object({
-                                        first: joi.any(),
-                                        last: joi.any(),
-                                        email: joi.any(),
-                                        department: joi.any(),
-                                        status: joi.any()
-                                    }).unknown(false)
-                                });
-                            })
-                        ],
-                        handler: 'users.find'
+                    '/blacklist': {
+                        get: 'users.findFilterBlacklist'
+                    },
+                    '/fields-disabled': {
+                        get: 'users.findFieldsDisabled'
                     },
                     '/whitelist': {
                         get: 'users.findFilterWhitelist'

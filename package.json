@@ -4,6 +4,7 @@
   "description": "REST/blueprints for mycro-mongoose",
   "main": "index.js",
   "scripts": {
+    "coverage": "grunt coverage",
     "test": "mocha test/tests/bootstrap.test.js test/tests/**/*.test.js --recursive"
   },
   "keywords": [
