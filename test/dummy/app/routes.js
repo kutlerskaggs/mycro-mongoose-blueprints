@@ -22,15 +22,10 @@ module.exports = function(mycro) {
                     }
                 },
                 '/users': {
-                    '/blacklist': {
-                        get: 'users.findFilterBlacklist'
+                    options: {
+                        model: 'user'
                     },
-                    '/fields-disabled': {
-                        get: 'users.findFieldsDisabled'
-                    },
-                    '/whitelist': {
-                        get: 'users.findFilterWhitelist'
-                    }
+                    get: 'mongoose.query'
                 }
             },
             '/health': {

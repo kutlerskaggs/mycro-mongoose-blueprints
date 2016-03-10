@@ -27,7 +27,7 @@ let users = [{
     department: 'marketing'
 }];
 
-let l = 10 - users.length;
+let l = 30 - users.length;
 for (var i = 0; i < l; i++) {
     users.push({});
 }
@@ -41,14 +41,15 @@ let statuses = [
 ];
 
 users.forEach(function(user) {
-    let first = faker.name.firstName(),
-        last = faker.name.lastName();
+    let first = faker.name.firstName().toLowerCase(),
+        last = faker.name.lastName().toLowerCase();
     _.defaults(user, {
         first: first,
         last: last,
         email: first.charAt(0) + last + '@example.com',
         department: faker.random.arrayElement(departments),
         password: faker.internet.password(),
+        status: faker.random.arrayElement(statuses),
         phone: {
             home: faker.phone.phoneNumber(),
             cell: faker.phone.phoneNumber(),

@@ -21,7 +21,8 @@
     "include-all": "^0.1.6",
     "joi": "^8.0.2",
     "json-api-ify": "git://github.com/kutlerskaggs/json-api-ify.git#4903119b3695f7d464b2c7cc5b291228dc10ae18",
-    "lodash": "^4.5.1"
+    "lodash": "^4.5.1",
+    "moment": "^2.12.0"
   },
   "devDependencies": {
     "chai": "^3.5.0",

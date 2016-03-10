@@ -28,13 +28,13 @@ describe('basic test', function() {
             },
 
             clear: ['mycro', function(fn) {
-                async.each(['users', 'posts', 'comments'], function(model, _fn) {
+                async.each(['user', 'post', 'comment'], function(model, _fn) {
                     mycro.models[model].remove({}, _fn);
                 }, fn);
             }],
 
             users: ['clear', function(fn) {
-                mycro.models.users.create(users, fn);
+                mycro.models.user.create(users, fn);
             }],
 
             posts: ['users', function(fn, r) {
@@ -53,14 +53,14 @@ describe('basic test', function() {
                             }
                         };
                     });
-                    mycro.models.posts.create(posts, _fn);
+                    mycro.models.post.create(posts, _fn);
                 }, fn);
             }],
 
             comments: ['posts', function(fn, r) {
                 async.waterfall([
                     function(_fn) {
-                        mycro.models.posts.find({}, _fn);
+                        mycro.models.post.find({}, _fn);
                     },
 
                     function(posts, _fn) {
@@ -74,7 +74,7 @@ describe('basic test', function() {
                             });
                             async.waterfall([
                                 function createComments(___fn) {
-                                    mycro.models.comments.create(comments, ___fn);
+                                    mycro.models.comment.create(comments, ___fn);
                                 },
 
                                 function addtoPost(created, ___fn) {

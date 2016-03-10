@@ -4,7 +4,7 @@ module.exports = function(connection, Schema) {
     let schema = new Schema({
         author: {
             type: Schema.Types.ObjectId,
-            ref: 'users'
+            ref: 'user'
         },
         body: String,
         status: {
@@ -13,19 +13,19 @@ module.exports = function(connection, Schema) {
         },
         comments: [{
             type: Schema.Types.ObjectId,
-            ref: 'comments'
+            ref: 'comment'
         }],
         likes: [{
             type: Schema.Types.ObjectId,
-            ref: 'users'
+            ref: 'user'
         }],
         nested: {
             user: {
                 type: Schema.Types.ObjectId,
-                ref: 'users'
+                ref: 'user'
             }
         }
     });
 
-    return connection.model('posts', schema);
+    return connection.model('post', schema);
 };

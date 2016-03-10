@@ -24,6 +24,13 @@ module.exports = function(done) {
                 mycro.connections.mongo.adapter.mongoose.set('debug', true);
             }
             fn();
+        },
+
+        function blueprints(fn) {
+            mycro.services.mongoose.on('error', function(err) {
+                mycro.services.error.notify(err);
+            });
+            fn();
         }
     ], done);
 };

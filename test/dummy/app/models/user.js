@@ -35,5 +35,5 @@ module.exports = function(connection, Schema) {
         }
     });
 
-    return connection.model('users', schema);
+    return connection.model('user', schema);
 };

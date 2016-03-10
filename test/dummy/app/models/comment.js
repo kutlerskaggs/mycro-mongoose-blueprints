@@ -4,7 +4,7 @@ module.exports = function(connection, Schema) {
     let schema = new Schema({
         author: {
             type: Schema.Types.ObjectId,
-            ref: 'users'
+            ref: 'user'
         },
         body: {
             type: String,
@@ -12,5 +12,5 @@ module.exports = function(connection, Schema) {
         }
     });
 
-    return connection.model('comments', schema);
+    return connection.model('comment', schema);
 };

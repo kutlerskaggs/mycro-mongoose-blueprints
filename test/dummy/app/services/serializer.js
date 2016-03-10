@@ -9,9 +9,10 @@ module.exports = function(mycro) {
     let serializer = new Serializer({
         baseUrl: 'https://www.example.com/api',
         id: 'id',
+        includeSerializationTime: true,
         links: {
             self(resource, options, cb) {
-                let link = options.baseUrl + '/' + options.type + '/' + resource.id;
+                let link = options.baseUrl + '/' + options.type + 's/' + resource.id;
                 cb(null, link);
             }
         },
@@ -29,13 +30,13 @@ module.exports = function(mycro) {
 
     serializer.initialize = function(done) {
         let types = {
-            users: {
+            user: {
                 blacklist: ['password']
             },
-            posts: {
+            post: {
                 relationships: {
                     author: {
-                        type: 'users',
+                        type: 'user',
                         include: true,
                         links: {
                             self(resource, options, cb) {
@@ -49,7 +50,7 @@ module.exports = function(mycro) {
                         }
                     },
                     comments: {
-                        type: 'comments',
+                        type: 'comment',
                         include: true,
                         links: {
                             self(resource, options, cb) {
@@ -63,7 +64,7 @@ module.exports = function(mycro) {
                         }
                     },
                     likes: {
-                        type: 'users',
+                        type: 'user',
                         include: true,
                         links: {
                             self(resource, options, cb) {
@@ -77,7 +78,7 @@ module.exports = function(mycro) {
                         }
                     },
                     'nested.user': {
-                        type: 'users',
+                        type: 'user',
                         include: true,
                         links: {
                             self(resource, options, cb) {
@@ -108,10 +109,10 @@ module.exports = function(mycro) {
                     }
                 }
             },
-            comments: {
+            comment: {
                 relationships: {
                     author: {
-                        type: 'users',
+                        type: 'user',
                         include: true,
                         links: {
                             self(resource, options, cb) {

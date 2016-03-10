@@ -4,13 +4,19 @@ var async = require('async'),
     _ = require('lodash');
 
 module.exports = {
-    find(req, res) {
-        let mycro = req.mycro;
-        mycro.services.mongoose.find(req, function(err, data) {
-            if (err) {
-                return res.json(500, err);
+    query(req, res) {
+        let mycro = req.mycro,
+            services = mycro.services;
+        async.waterfall([
+            function execQuery(fn) {
+                services.mongoose.query(req, {}, services.error.intercept(fn));
+            },
+
+            function serializeResponse(data, fn) {
+                services.serializer.serialize(_.get(req, 'options.model'), data, fn);
             }
-            res.json(200, data);
-        });
+        ], services.error.interceptResponse(res, function(payload) {
+            res.json(200, payload);
+        }));
     }
 };

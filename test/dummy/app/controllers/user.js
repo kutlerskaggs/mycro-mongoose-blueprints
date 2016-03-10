@@ -76,29 +76,5 @@ module.exports = {
         ], error.interceptResponse(res, function(payload) {
             res.json(200, payload);
         }));
-    },
-
-
-    findFilterWhitelist(req, res) {
-        let mycro = req.mycro,
-            error = mycro.services.error;
-        async.waterfall([
-            function find(fn) {
-                let blueprints = mycro.services.mongoose;
-                blueprints.find(req, {
-                    model: 'users',
-                    filter: {
-                        whitelist: ['status', 'department']
-                    }
-                }, error.intercept(fn));
-            },
-
-            function serialize(posts, fn) {
-                let serializer = mycro.services.serializer;
-                serializer.serialize('users', posts, error.intercept(fn));
-            }
-        ], error.interceptResponse(res, function(payload) {
-            res.json(200, payload);
-        }));
     }
 };
