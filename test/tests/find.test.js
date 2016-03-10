@@ -143,14 +143,14 @@ describe('find', function() {
         it('should allow the server to set filters', function(done) {
             async.parallel([
                 function(fn) {
-                    request.get('/api/posts/posts-policy')
+                    request.get('/api/posts/query-policy')
                         .set(defaultHeaders)
                         .expect(401)
                         .end(fn);
                 },
 
                 function(fn) {
-                    request.get('/api/posts/posts-policy')
+                    request.get('/api/posts/query-policy')
                         .set(_.merge({'x-user-id': kanye.id}, defaultHeaders))
                         .expect(200)
                         .expect(function(res) {
@@ -164,23 +164,41 @@ describe('find', function() {
                 },
 
                 function(fn) {
-                    request.get('/api/posts/posts-policy?' + qs.stringify({
+                    request.get('/api/posts/query-policy?' + qs.stringify({
                             filter: {
                                 author: {
                                     ne: kanye.id
                                 },
                                 status: {
-                                    ne: 'active'
+                                    ne: 'published'
                                 }
                             }
                         }))
                         .set(_.merge({'x-user-id': kanye.id}, defaultHeaders))
                         .expect(200)
                         .expect(function(res) {
-                            res.body.data.forEach(function(post) {
-                                let published = post.attributes.status === 'published',
-                                    own = post.relationships.author.data.id === kanye.id;
-                                expect(published || own).to.equal(true);
+                            expect(res.body.data).to.be.an('array').with.lengthOf(0);
+                        })
+                        .end(fn);
+                },
+
+                function(fn) {
+                    request.get('/api/users/query-policy?' + qs.stringify({
+                            filter: {
+                                department: 'accounting'
+                            },
+                            sort: '-createdAt'
+                        }))
+                        .set(_.merge({'x-user-id': kanye.id}, defaultHeaders))
+                        .expect(200)
+                        .expect(function(res) {
+                            let lastDate = new Date().toISOString();
+                            res.body.data.forEach(function(user) {
+                                expect(user.attributes.department).to.equal('accounting');
+                                let createdAt = moment(user.attributes.createdAt);
+                                expect(createdAt.isBefore(lastDate)).to.equal(true);
+                                lastDate = createdAt.toDate().toISOString();
+                                expect(user.attributes).to.not.have.property('phone');
                             });
                         })
                         .end(fn);

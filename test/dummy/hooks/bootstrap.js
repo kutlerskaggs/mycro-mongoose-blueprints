@@ -8,7 +8,7 @@ module.exports = function(done) {
         function responseHandler(fn) {
             mycro.services.error.responseHandler = function(res, err) {
                 let payload = mycro.services.serializer.serializeError(err),
-                    status = payload.meta.status;
+                status = payload.meta.status;
                 res.json(status, payload);
             };
             fn();
@@ -30,6 +30,26 @@ module.exports = function(done) {
             mycro.services.mongoose.on('error', function(err) {
                 mycro.services.error.notify(err);
             });
+            fn();
+        },
+
+        function error(fn) {
+            mycro.services.error.wrapError = function(status, title, cb) {
+                return function(err) {
+                    if (err) {
+                        return cb({
+                            status: status,
+                            title: title,
+                            detail: err.message || err
+                        });
+                    }
+                    let args = [];
+                    for (var i = 0; i < arguments.length; i++) {
+                        args.push(arguments[i]);
+                    }
+                    cb.apply(null, args);
+                };
+            };
             fn();
         }
     ], done);

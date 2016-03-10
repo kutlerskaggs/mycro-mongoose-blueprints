@@ -12,8 +12,8 @@ module.exports = function(mycro) {
                         model: 'post'
                     },
                     get: 'mongoose.query',
-                    '/posts-policy': {
-                        additionalPolicies: ['posts'],
+                    '/query-policy': {
+                        additionalPolicies: ['posts/query'],
                         get: 'mongoose.query'
                     }
                 },
@@ -21,7 +21,11 @@ module.exports = function(mycro) {
                     options: {
                         model: 'user'
                     },
-                    get: 'mongoose.query'
+                    get: 'mongoose.query',
+                    '/query-policy': {
+                        additionalPolicies: ['users/query'],
+                        get: 'mongoose.query'
+                    }
                 }
             },
             '/health': {

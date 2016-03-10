@@ -94,17 +94,22 @@ module.exports = function(mycro) {
                 },
                 topLevelLinks: {
                     self(options, cb) {
-                        let link = options.baseUrl + '/' + options.type;
+                        let query = qs.stringify(_.get(options, 'req.query') || {}, {encode: false}),
+                            link = options.baseUrl + '/' + options.type + 's';
+                        if (query.length) {
+                            link += '?' + query;
+                        }
                         cb(null, link);
                     },
                     next(options, cb) {
-                        let query = {
+                        let query = _.get(options, 'req.query') || {};
+                        _.merge(query, {
                             page: {
                                 size: options.pageSize || 10,
                                 number: options.nextPage || 2
                             }
-                        };
-                        let link = options.baseUrl + '/' + options.type + '?' + qs.stringify(query, {encode: false});
+                        });
+                        let link = options.baseUrl + '/' + options.type + 's?' + qs.stringify(query, {encode: false});
                         cb(null, link);
                     }
                 }

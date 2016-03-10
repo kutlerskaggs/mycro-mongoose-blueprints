@@ -13,7 +13,11 @@ module.exports = {
             },
 
             function serializeResponse(data, fn) {
-                services.serializer.serialize(_.get(req, 'options.model'), data, fn);
+                services.serializer.serialize(_.get(req, 'options.model'), data, {
+                    req: req,
+                    pageSize: _.get(req, 'query.page.size') || 20,
+                    nextPage: (_.get(req, 'query.page.number') || 1) + 1
+                }, fn);
             }
         ], services.error.interceptResponse(res, function(payload) {
             res.json(200, payload);
