@@ -8,17 +8,13 @@ module.exports = function(mycro) {
                     'authenticated'
                 ],
                 '/posts': {
-                    '/disable-filter': {
-                        get: 'posts.findFilterDisable'
+                    options: {
+                        model: 'post'
                     },
-                    '/server-filter': {
-                        get: 'posts.findFilterServer'
-                    },
-                    '/server-options': {
-                        additionalPolicies: [
-                            'owner'
-                        ],
-                        get: 'posts.find'
+                    get: 'mongoose.query',
+                    '/posts-policy': {
+                        additionalPolicies: ['posts'],
+                        get: 'mongoose.query'
                     }
                 },
                 '/users': {

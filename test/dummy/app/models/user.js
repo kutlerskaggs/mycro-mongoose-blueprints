@@ -7,6 +7,7 @@ module.exports = function(connection, Schema) {
         first: String,
         last: String,
         email: String,
+        createdAt: Date,
         password: String,
         department: String,
         status: {

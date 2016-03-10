@@ -1,12 +1,14 @@
 'use strict';
 
 var faker = require('faker'),
+    moment = require('moment'),
     _ = require('lodash');
 
 let users = [{
     first: 'tim',
     last: 'tebow',
     email: 'ttebow@example.com',
+    createdAt: moment('03/15/2015').toDate(),
     department: 'accounting',
     status: 'active'
 },{
@@ -47,6 +49,7 @@ users.forEach(function(user) {
         first: first,
         last: last,
         email: first.charAt(0) + last + '@example.com',
+        createdAt: faker.date.between(moment('01/01/2015').toDate(), moment('12/31/2015').toDate()),
         department: faker.random.arrayElement(departments),
         password: faker.internet.password(),
         status: faker.random.arrayElement(statuses),

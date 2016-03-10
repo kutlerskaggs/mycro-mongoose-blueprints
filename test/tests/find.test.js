@@ -3,6 +3,7 @@
 var async = require('async'),
     expect = require('chai').expect,
     faker = require('faker'),
+    moment = require('moment'),
     qs = require('qs'),
     sinon = require('sinon'),
     _ = require('lodash');
@@ -48,7 +49,7 @@ describe('find', function() {
     context('filter', function() {
         it('should correctly parse query filter param', function(done) {
             async.parallel([
-                function(fn) {
+                function testEq(fn) {
                     request.get('/api/users?' + qs.stringify({
                         filter: {
                             status: 'active'
@@ -62,7 +63,7 @@ describe('find', function() {
                     .end(fn);
                 },
 
-                function(fn) {
+                function testIn(fn) {
                     request.get('/api/users?' + qs.stringify({
                         filter: {
                             status: ['active', 'inactive']
@@ -76,14 +77,117 @@ describe('find', function() {
                     .end(fn);
                 },
 
-                
+                function testRegex(fn) {
+                    request.get('/api/users?' + qs.stringify({
+                        filter: {
+                            first: {
+                                regex: '^kan\\w+$'
+                            }
+                        }
+                    })).set(_.merge({'x-user-id': kanye.id}, defaultHeaders))
+                    .expect(200)
+                    .expect(function(res) {
+                        expect(res.body.data).to.be.an('array').with.length.of.at.least(1);
+                        let firstNames = _(res.body.data).map('attributes.first').value();
+                        firstNames.forEach(function(name) {
+                            expect(name).to.match(/^kan\w+$/g);
+                        });
+                    })
+                    .end(fn);
+                },
+
+                function testDate(fn) {
+                    request.get('/api/users?' + qs.stringify({
+                        filter: {
+                            createdAt: {
+                                gte: moment('03/01/2015').toDate(),
+                                lt: moment('04/01/2015').toDate()
+                            }
+                        }
+                    })).set(_.merge({'x-user-id': kanye.id}, defaultHeaders))
+                    .expect(200)
+                    .expect(function(res) {
+                        expect(res.body.data).to.be.an('array').with.length.of.at.least(1);
+                        let dates = _(res.body.data).map('attributes.createdAt').value();
+                        dates.forEach(function(date) {
+                            expect(moment(date).isBetween('03/01/2015', '04/01/2015')).to.equal(true);
+                        });
+                    })
+                    .end(fn);
+                },
+
+                function testNested(fn) {
+                    request.get('/api/posts?' + qs.stringify({
+                        filter: {
+                            'nested.user': [kanye.id, tim.id]
+                        }
+                    })).set(_.merge({'x-user-id': kanye.id}, defaultHeaders))
+                    .expect(200)
+                    .expect(function(res) {
+                        if (res.body.data.length) {
+                            res.body.data.forEach(function(post) {
+                                let nestedUser = post.relationships['nested.user'].data.id;
+                                expect([kanye.id, tim.id]).to.contain(nestedUser);
+                            });
+                        }
+                    })
+                    .end(fn);
+                }
             ], done);
         });
 
         it('should allow the server to disable filters');
         it('should allow the server to whitelist fields for filtering');
         it('should allow the server to blacklist fields for filtering');
-        it('should allow the server to set filters');
+
+        it('should allow the server to set filters', function(done) {
+            async.parallel([
+                function(fn) {
+                    request.get('/api/posts/posts-policy')
+                        .set(defaultHeaders)
+                        .expect(401)
+                        .end(fn);
+                },
+
+                function(fn) {
+                    request.get('/api/posts/posts-policy')
+                        .set(_.merge({'x-user-id': kanye.id}, defaultHeaders))
+                        .expect(200)
+                        .expect(function(res) {
+                            res.body.data.forEach(function(post) {
+                                let published = post.attributes.status === 'published',
+                                    own = post.relationships.author.data.id === kanye.id;
+                                expect(published || own).to.equal(true);
+                            });
+                        })
+                        .end(fn);
+                },
+
+                function(fn) {
+                    request.get('/api/posts/posts-policy?' + qs.stringify({
+                            filter: {
+                                author: {
+                                    ne: kanye.id
+                                },
+                                status: {
+                                    ne: 'active'
+                                }
+                            }
+                        }))
+                        .set(_.merge({'x-user-id': kanye.id}, defaultHeaders))
+                        .expect(200)
+                        .expect(function(res) {
+                            res.body.data.forEach(function(post) {
+                                let published = post.attributes.status === 'published',
+                                    own = post.relationships.author.data.id === kanye.id;
+                                expect(published || own).to.equal(true);
+                            });
+                        })
+                        .end(fn);
+                }
+            ], done);
+        });
+
         it('should allow the server to process the query before it\'s executed');
     });
 

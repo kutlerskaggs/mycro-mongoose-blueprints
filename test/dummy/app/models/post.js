@@ -11,6 +11,7 @@ module.exports = function(connection, Schema) {
             type: String,
             enum: ['draft', 'published', 'archived']
         },
+        createdAt: Date,
         comments: [{
             type: Schema.Types.ObjectId,
             ref: 'comment'

@@ -3,6 +3,7 @@
 var async = require('async'),
     chai = require('chai'),
     faker = require('faker'),
+    moment = require('moment'),
     sinonchai = require('sinon-chai'),
     supertest = require('supertest'),
     users = require('../fixtures/users'),
@@ -48,6 +49,7 @@ describe('basic test', function() {
                             likes: _.range(_.random(1,3)).map(function() {
                                 return faker.random.arrayElement(r.users)._id;
                             }),
+                            createdAt: faker.date.between(moment('01/01/2015').toDate(), moment().toDate()),
                             nested: {
                                 user: faker.random.arrayElement(r.users)._id
                             }
