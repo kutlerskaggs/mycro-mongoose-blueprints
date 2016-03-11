@@ -12,9 +12,25 @@ module.exports = function(mycro) {
                         model: 'post'
                     },
                     get: 'mongoose.query',
+                    '/fields-blacklist': {
+                        additionalPolicies: [
+                            mycro.policies['query-fields']('blacklist', ['createdAt'])
+                        ],
+                        get: 'mongoose.query'
+                    },
                     '/fields-whitelist': {
                         additionalPolicies: [
                             mycro.policies['query-fields']('whitelist', ['createdAt', 'body', 'status'])
+                        ],
+                        get: 'mongoose.query'
+                    },
+                    '/pagination': {
+                        additionalPolicies: [
+                            mycro.policies['query-pagination']({
+                                minSize: 5,
+                                maxSize: 15,
+                                defaultSize: 10
+                            })
                         ],
                         get: 'mongoose.query'
                     },

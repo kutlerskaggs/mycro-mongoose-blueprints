@@ -19,8 +19,8 @@ module.exports = function(req, res, next) {
             'nested.user': joi.any()
         }).unknown(false),
         page: joi.object({
-            size: joi.number().integer().min(1).max(100),
-            number: joi.number().integer().min(1)
+            size: joi.number().integer(),
+            number: joi.number().integer()
         }).unknown(false),
         sort: joi.string()
     }).unknown(false);

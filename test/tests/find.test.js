@@ -109,9 +109,6 @@ describe('find', function() {
                 },
 
                 function exclusive(fn) {
-                    mycro.services.mongoose._testHook = function(results) {
-                        console.log(JSON.stringify(results.fields));
-                    };
                     request.get('/api/posts/fields-whitelist?' + qs.stringify({
                         fields: {
                             post: '-body,-createdAt,-status'
@@ -124,23 +121,158 @@ describe('find', function() {
                             expect(user.attributes).to.have.all.keys('_id');
                         });
                     })
-                    .end(function(err, res) {
-                        console.log(JSON.stringify(res.body));
-                        fn(err);
-                    });
+                    .end(fn);
+                },
+
+                function inclusiveAndExclusive(fn) {
+                    request.get('/api/posts/fields-whitelist?' + qs.stringify({
+                        fields: {
+                            post: 'body,-createdAt,-status'
+                        }
+                    }))
+                    .set(_.merge({'x-user-id': kanye.id}, defaultHeaders))
+                    .expect(200)
+                    .expect(function(res) {
+                        res.body.data.forEach(function(user) {
+                            expect(user.attributes).to.have.all.keys('_id', 'body');
+                        });
+                    })
+                    .end(fn);
                 }
             ], done);
         });
 
-        it('should allow the server to blacklist fields for selection/exclusion');
-        it('should enforce a whitelist over a blacklist');
-        it('should should aggregate all field selections (server/client) and make the appropriate selections (whitelist over blacklist, server over client)');
+        it('should allow the server to blacklist fields for selection/exclusion', function(done) {
+            async.parallel([
+                function inclusive(fn) {
+                    request.get('/api/posts/fields-blacklist?' + qs.stringify({
+                        fields: {
+                            post: 'body,createdAt,status'
+                        }
+                    }))
+                    .set(_.merge({'x-user-id': kanye.id}, defaultHeaders))
+                    .expect(200)
+                    .expect(function(res) {
+                        res.body.data.forEach(function(post) {
+                            expect(post.attributes).to.have.all.keys('_id', 'body', 'status');
+                        });
+                    })
+                    .end(fn);
+                },
+
+                function none(fn) {
+                    request.get('/api/posts/fields-blacklist')
+                    .set(_.merge({'x-user-id': kanye.id}, defaultHeaders))
+                    .expect(200)
+                    .expect(function(res) {
+                        res.body.data.forEach(function(post) {
+                            let attrs = Object.keys(post.attributes);
+                            expect(attrs).to.have.length.above(1);
+                            expect(post.attributes).to.not.have.property('createdAt');
+                        });
+                    })
+                    .end(fn);
+                },
+
+                function exclusive(fn) {
+                    request.get('/api/posts/fields-blacklist?' + qs.stringify({
+                        fields: {
+                            post: '-status'
+                        }
+                    }))
+                    .set(_.merge({'x-user-id': kanye.id}, defaultHeaders))
+                    .expect(200)
+                    .expect(function(res) {
+                        res.body.data.forEach(function(post) {
+                            expect(post.attributes).to.not.have.property('createdAt');
+                            expect(post.attributes).to.not.have.property('status');
+                        });
+                    })
+                    .end(fn);
+                },
+
+                function inclusiveAndExclusive(fn) {
+                    request.get('/api/posts/fields-blacklist?' + qs.stringify({
+                        fields: {
+                            post: 'body,-status'
+                        }
+                    }))
+                    .set(_.merge({'x-user-id': kanye.id}, defaultHeaders))
+                    .expect(200)
+                    .expect(function(res) {
+                        res.body.data.forEach(function(post) {
+                            expect(post.attributes).to.have.all.keys('body', '_id');
+                        });
+                    })
+                    .end(fn);
+                }
+            ], done);
+        });
+
         it('should allow for related resource field selection in the same manner as the primary resource');
     });
 
     context('page', function() {
         it('should allow the server to explicitly control pagination');
-        it('should allow the server to set allowed pagination settings');
+
+        it('should allow the server to set allowed pagination settings', function(done) {
+            async.parallel([
+                function(fn) {
+                    request.get('/api/users?' + qs.stringify({
+                        page: {
+                            size: 1000
+                        }
+                    }))
+                    .set(_.merge({'x-user-id': kanye.id}, defaultHeaders))
+                    .expect(400)
+                    .end(fn);
+                },
+
+                function(fn) {
+                    request.get('/api/posts?' + qs.stringify({
+                        page: {
+                            size: 101
+                        }
+                    }))
+                    .set(_.merge({'x-user-id': kanye.id}, defaultHeaders))
+                    .expect(400)
+                    .end(fn);
+                },
+
+                function(fn) {
+                    request.get('/api/posts/pagination?' + qs.stringify({
+                        page: {
+                            size: 20
+                        }
+                    }))
+                    .set(_.merge({'x-user-id': kanye.id}, defaultHeaders))
+                    .expect(400)
+                    .end(fn);
+                },
+
+                function(fn) {
+                    request.get('/api/posts/pagination?' + qs.stringify({
+                        page: {
+                            size: 4
+                        }
+                    }))
+                    .set(_.merge({'x-user-id': kanye.id}, defaultHeaders))
+                    .expect(400)
+                    .end(fn);
+                },
+
+                function(fn) {
+                    request.get('/api/posts/pagination')
+                    .set(_.merge({'x-user-id': kanye.id}, defaultHeaders))
+                    .expect(200)
+                    .expect(function(res) {
+                        expect(res.body.data).to.have.lengthOf(10);
+                    })
+                    .end(fn);
+                }
+            ], done);
+        });
+
         it('should allow the server to explicitly control pagination of related resources');
         it('should allow the server to set allowed pagination settings of related resources');
     });

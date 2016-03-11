@@ -41,8 +41,8 @@ module.exports = function(req, res, next) {
         fields: joi.object(),
         filter: filterSchema,
         page: joi.object({
-            size: joi.number().integer().min(1).max(100).default(20),
-            number: joi.number().integer().min(1)
+            size: joi.number().integer(),
+            number: joi.number().integer()
         }),
         sort: joi.string()
     });
