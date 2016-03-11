@@ -12,6 +12,18 @@ module.exports = function(mycro) {
                         model: 'post'
                     },
                     get: 'mongoose.query',
+                    '/fields-whitelist': {
+                        additionalPolicies: [
+                            mycro.policies['query-fields']('whitelist', ['createdAt', 'body', 'status'])
+                        ],
+                        get: 'mongoose.query'
+                    },
+                    '/query-blacklist': {
+                        additionalPolicies: [
+                            mycro.policies['query-filter']('blacklist', ['nested.user'])
+                        ],
+                        get: 'mongoose.query'
+                    },
                     '/query-policy': {
                         additionalPolicies: ['posts/query'],
                         get: 'mongoose.query'
@@ -22,8 +34,26 @@ module.exports = function(mycro) {
                         model: 'user'
                     },
                     get: 'mongoose.query',
+                    '/fields-whitelist': {
+                        additionalPolicies: [
+                            mycro.policies['query-fields']('whitelist', ['first', 'last'])
+                        ],
+                        get: 'mongoose.query'
+                    },
+                    '/query-blacklist': {
+                        additionalPolicies: [
+                            mycro.policies['query-filter']('blacklist', ['department', 'phone.house'])
+                        ],
+                        get: 'mongoose.query'
+                    },
                     '/query-policy': {
                         additionalPolicies: ['users/query'],
+                        get: 'mongoose.query'
+                    },
+                    '/query-whitelist': {
+                        additionalPolicies: [
+                            mycro.policies['query-filter']('whitelist', ['department'])
+                        ],
                         get: 'mongoose.query'
                     }
                 }

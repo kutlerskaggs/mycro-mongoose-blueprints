@@ -9,7 +9,17 @@ module.exports = {
             services = mycro.services;
         async.waterfall([
             function execQuery(fn) {
-                services.mongoose.query(req, {}, services.error.intercept(fn));
+                services.mongoose.query(req, {
+                    processQuery(results, cb) {
+                        if (_.isFunction(services.mongoose._testHook)) {
+                            services.mongoose._testHook(results);
+                        }
+                        if (_.isFunction(services.mongoose._processQuery)) {
+                            return services.mongoose._processQuery(results, cb);
+                        }
+                        async.setImmediate(cb);
+                    }
+                }, services.error.intercept(fn));
             },
 
             function serializeResponse(data, fn) {

@@ -1,12 +1,12 @@
 'use strict';
 
 var async = require('async'),
-    expect = require('chai').expect,
-    faker = require('faker'),
-    moment = require('moment'),
-    qs = require('qs'),
-    sinon = require('sinon'),
-    _ = require('lodash');
+expect = require('chai').expect,
+faker = require('faker'),
+moment = require('moment'),
+qs = require('qs'),
+sinon = require('sinon'),
+_ = require('lodash');
 
 describe('find', function() {
     let defaultHeaders = { 'accept-version': '^1.0.0' };
@@ -30,8 +30,108 @@ describe('find', function() {
     });
 
     context('fields', function() {
-        it('should allow the server to disable field selection');
-        it('should allow the server to whitelist fields for selection/exclusion');
+        it('should select the appropriate fields', function(done) {
+            async.parallel([
+                function(fn) {
+                    request.get('/api/users?' + qs.stringify({
+                        fields: {
+                            user: 'first,last'
+                        }
+                    }))
+                    .set(_.merge({'x-user-id': kanye.id}, defaultHeaders))
+                    .expect(200)
+                    .expect(function(res) {
+                        res.body.data.forEach(function(user) {
+                            expect(user.attributes).to.have.all.keys('first', 'last', '_id');
+                        });
+                    })
+                    .end(fn);
+                },
+
+                function(fn) {
+                    request.get('/api/posts?' + qs.stringify({
+                        fields: {
+                            post: 'body'
+                        }
+                    }))
+                    .set(_.merge({'x-user-id': kanye.id}, defaultHeaders))
+                    .expect(200)
+                    .expect(function(res) {
+                        res.body.data.forEach(function(user) {
+                            expect(user.attributes).to.have.all.keys('body', '_id');
+                        });
+                    })
+                    .end(fn);
+                }
+            ], done);
+        });
+
+        it('should allow the server to whitelist fields for selection/exclusion', function(done) {
+            async.series([
+                function inclusive(fn) {
+                    mycro.services.mongoose._testHook = function(results) {
+                        expect(results.fields.user.include).to.eql(['first', 'last']);
+                    };
+                    request.get('/api/users/fields-whitelist?' + qs.stringify({
+                        fields: {
+                            user: 'first,last,password'
+                        }
+                    }))
+                    .set(_.merge({'x-user-id': kanye.id}, defaultHeaders))
+                    .expect(200)
+                    .expect(function(res) {
+                        delete mycro.services.mongoose._testHook;
+                        res.body.data.forEach(function(user) {
+                            expect(user.attributes).to.have.all.keys('first', 'last', '_id');
+                        });
+                    })
+                    .end(function(err, res) {
+                        fn(err);
+                    });
+                },
+
+                function none(fn) {
+                    mycro.services.mongoose._testHook = function(results) {
+                        ['createdAt', 'body', 'status'].forEach(function(attr) {
+                            expect(results.fields.post.include).to.contain(attr);
+                        });
+                    };
+                    request.get('/api/posts/fields-whitelist')
+                    .set(_.merge({'x-user-id': kanye.id}, defaultHeaders))
+                    .expect(200)
+                    .expect(function(res) {
+                        delete mycro.services.mongoose._testHook;
+                        res.body.data.forEach(function(user) {
+                            expect(user.attributes).to.have.all.keys('createdAt', 'body', 'status', '_id');
+                        });
+                    })
+                    .end(fn);
+                },
+
+                function exclusive(fn) {
+                    mycro.services.mongoose._testHook = function(results) {
+                        console.log(JSON.stringify(results.fields));
+                    };
+                    request.get('/api/posts/fields-whitelist?' + qs.stringify({
+                        fields: {
+                            post: '-body,-createdAt,-status'
+                        }
+                    }))
+                    .set(_.merge({'x-user-id': kanye.id}, defaultHeaders))
+                    .expect(200)
+                    .expect(function(res) {
+                        res.body.data.forEach(function(user) {
+                            expect(user.attributes).to.have.all.keys('_id');
+                        });
+                    })
+                    .end(function(err, res) {
+                        console.log(JSON.stringify(res.body));
+                        fn(err);
+                    });
+                }
+            ], done);
+        });
+
         it('should allow the server to blacklist fields for selection/exclusion');
         it('should enforce a whitelist over a blacklist');
         it('should should aggregate all field selections (server/client) and make the appropriate selections (whitelist over blacklist, server over client)');
@@ -54,7 +154,8 @@ describe('find', function() {
                         filter: {
                             status: 'active'
                         }
-                    })).set(_.merge({'x-user-id': kanye.id}, defaultHeaders))
+                    }))
+                    .set(_.merge({'x-user-id': kanye.id}, defaultHeaders))
                     .expect(200)
                     .expect(function(res) {
                         let statuses = _(res.body.data).map('attributes.status').uniq().value();
@@ -136,77 +237,179 @@ describe('find', function() {
             ], done);
         });
 
-        it('should allow the server to disable filters');
-        it('should allow the server to whitelist fields for filtering');
-        it('should allow the server to blacklist fields for filtering');
+        it('should allow the server to whitelist fields for filtering', function(done) {
+            async.series([
+                function(fn) {
+                    mycro.services.mongoose._testHook = function(results) {
+                        expect(results.filter).to.be.an('object');
+                        expect(results.filter).to.have.all.keys('department');
+                        expect(results.filter.department).to.have.property('$eq', 'sales');
+                    };
+
+                    request.get('/api/users/query-whitelist?' + qs.stringify({
+                        filter: {
+                            first: 'kanye',
+                            department: 'sales'
+                        }
+                    }))
+                    .set(_.merge({'x-user-id': kanye.id}, defaultHeaders))
+                    .expect(200)
+                    .end(function(err) {
+                        delete mycro.services.mongoose._testHook;
+                        fn(err);
+                    });
+                }
+            ], done);
+        });
+
+        it('should allow the server to blacklist fields for filtering', function(done) {
+            async.series([
+                function(fn) {
+                    mycro.services.mongoose._testHook = function(results) {
+                        expect(results.filter).to.be.an('object');
+                        expect(results.filter).to.have.all.keys('first');
+                        expect(results.filter.first).to.have.property('$eq', 'kanye');
+                    };
+
+                    request.get('/api/users/query-blacklist?' + qs.stringify({
+                        filter: {
+                            department: 'accounting',
+                            first: 'kanye',
+                            'phone.house': 'test'
+                        }
+                    }))
+                    .set(_.merge({'x-user-id': kanye.id}, defaultHeaders))
+                    .expect(200)
+                    .expect(function(res) {
+                        let departments = _(res.body.data).map('attributes.department').uniq().value();
+                        expect(departments).to.contain('sales');
+                    })
+                    .end(function(err) {
+                        delete mycro.services.mongoose._testHook;
+                        fn(err);
+                    });
+                },
+
+                function(fn) {
+                    mycro.services.mongoose._testHook = function(results) {
+                        expect(results.filter).to.be.an('object');
+                        expect(results.filter).to.not.have.property('nested.user');
+                    };
+
+                    request.get('/api/posts/query-blacklist?' + qs.stringify({
+                        filter: {
+                            'nested.user': kanye.id
+                        }
+                    }))
+                    .set(_.merge({'x-user-id': kanye.id}, defaultHeaders))
+                    .expect(200)
+                    .end(function(err) {
+                        delete mycro.services.mongoose._testHook;
+                        fn(err);
+                    });
+                }
+            ], done);
+        });
 
         it('should allow the server to set filters', function(done) {
             async.parallel([
                 function(fn) {
                     request.get('/api/posts/query-policy')
-                        .set(defaultHeaders)
-                        .expect(401)
-                        .end(fn);
+                    .set(defaultHeaders)
+                    .expect(401)
+                    .end(fn);
                 },
 
                 function(fn) {
                     request.get('/api/posts/query-policy')
-                        .set(_.merge({'x-user-id': kanye.id}, defaultHeaders))
-                        .expect(200)
-                        .expect(function(res) {
-                            res.body.data.forEach(function(post) {
-                                let published = post.attributes.status === 'published',
-                                    own = post.relationships.author.data.id === kanye.id;
-                                expect(published || own).to.equal(true);
-                            });
-                        })
-                        .end(fn);
+                    .set(_.merge({'x-user-id': kanye.id}, defaultHeaders))
+                    .expect(200)
+                    .expect(function(res) {
+                        res.body.data.forEach(function(post) {
+                            let published = post.attributes.status === 'published',
+                            own = post.relationships.author.data.id === kanye.id;
+                            expect(published || own).to.equal(true);
+                        });
+                    })
+                    .end(fn);
                 },
 
                 function(fn) {
                     request.get('/api/posts/query-policy?' + qs.stringify({
-                            filter: {
-                                author: {
-                                    ne: kanye.id
-                                },
-                                status: {
-                                    ne: 'published'
-                                }
+                        filter: {
+                            author: {
+                                ne: kanye.id
+                            },
+                            status: {
+                                ne: 'published'
                             }
-                        }))
-                        .set(_.merge({'x-user-id': kanye.id}, defaultHeaders))
-                        .expect(200)
-                        .expect(function(res) {
-                            expect(res.body.data).to.be.an('array').with.lengthOf(0);
-                        })
-                        .end(fn);
+                        }
+                    }))
+                    .set(_.merge({'x-user-id': kanye.id}, defaultHeaders))
+                    .expect(200)
+                    .expect(function(res) {
+                        expect(res.body.data).to.be.an('array').with.lengthOf(0);
+                    })
+                    .end(fn);
                 },
 
                 function(fn) {
                     request.get('/api/users/query-policy?' + qs.stringify({
-                            filter: {
-                                department: 'accounting'
-                            },
-                            sort: '-createdAt'
-                        }))
-                        .set(_.merge({'x-user-id': kanye.id}, defaultHeaders))
-                        .expect(200)
-                        .expect(function(res) {
-                            let lastDate = new Date().toISOString();
-                            res.body.data.forEach(function(user) {
-                                expect(user.attributes.department).to.equal('accounting');
-                                let createdAt = moment(user.attributes.createdAt);
-                                expect(createdAt.isBefore(lastDate)).to.equal(true);
-                                lastDate = createdAt.toDate().toISOString();
-                                expect(user.attributes).to.not.have.property('phone');
-                            });
-                        })
-                        .end(fn);
+                        filter: {
+                            department: 'accounting'
+                        },
+                        sort: '-createdAt'
+                    }))
+                    .set(_.merge({'x-user-id': kanye.id}, defaultHeaders))
+                    .expect(200)
+                    .expect(function(res) {
+                        let lastDate = new Date().toISOString();
+                        res.body.data.forEach(function(user) {
+                            expect(user.attributes.department).to.equal('accounting');
+                            let createdAt = moment(user.attributes.createdAt);
+                            expect(createdAt.isBefore(lastDate)).to.equal(true);
+                            lastDate = createdAt.toDate().toISOString();
+                            expect(user.attributes).to.not.have.property('phone');
+                        });
+                    })
+                    .end(fn);
                 }
             ], done);
         });
 
-        it('should allow the server to process the query before it\'s executed');
+        it('should allow the server to process the query before it\'s executed', function(done) {
+            let test = {
+                process: function(results, cb) {
+                    _.extend(results.filter, {
+                        first: {
+                            $eq: 'tim'
+                        },
+                        last: {
+                            $eq: 'tebow'
+                        }
+                    });
+                    async.setImmediate(cb);
+                }
+            };
+            sinon.spy(test, 'process');
+            mycro.services.mongoose._processQuery = test.process;
+            request.get('/api/users?' + qs.stringify({
+                filter: {
+                    first: 'kanye'
+                }
+            }))
+            .set(_.merge({'x-user-id': kanye.id}, defaultHeaders))
+            .expect(200)
+            .expect(function(res) {
+                expect(res.body.data).to.be.an('array').with.lengthOf(1);
+                expect(res.body.data[0].attributes).to.have.property('first', 'tim');
+                expect(res.body.data[0].attributes).to.have.property('last', 'tebow');
+            })
+            .end(function(err) {
+                delete mycro.services.mongoose._processQuery;
+                done(err);
+            });
+        });
     });
 
     context('include', function() {
