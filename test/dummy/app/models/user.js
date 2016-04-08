@@ -7,12 +7,16 @@ module.exports = function(connection, Schema) {
         first: String,
         last: String,
         email: String,
-        createdAt: Date,
+        createdAt: {
+            type: Date,
+            default: Date.now
+        },
         password: String,
         department: String,
         status: {
             type: String,
-            enum: ['active', 'inactive', 'unverified', 'pending']
+            enum: ['active', 'inactive', 'unverified', 'pending'],
+            default: 'unverified'
         },
         phone: {
             mobile: String,

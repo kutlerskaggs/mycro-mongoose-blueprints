@@ -20,7 +20,6 @@
     "async": "^1.5.2",
     "include-all": "^0.1.6",
     "joi": "^8.0.2",
-    "json-api-ify": "git://github.com/kutlerskaggs/json-api-ify.git#4903119b3695f7d464b2c7cc5b291228dc10ae18",
     "lodash": "^4.5.1",
     "moment": "^2.12.0"
   },
@@ -30,7 +29,7 @@
     "grunt": "^0.4.5",
     "grunt-mocha-istanbul": "^3.0.1",
     "istanbul": "^0.4.2",
-    "json-api-ify": "git://github.com/kutlerskaggs/json-api-ify.git#4903119b3695f7d464b2c7cc5b291228dc10ae18",
+    "json-api-ify": "^0.3.0",
     "mocha": "^2.4.5",
     "mycro": "^0.3.2",
     "mycro-error": "^0.1.0",

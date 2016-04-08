@@ -1,6 +1,7 @@
 'use strict';
 
 var async = require('async'),
+    mongoose = require('mongoose'),
     qs = require('qs'),
     Serializer = require('json-api-ify'),
     _ = require('lodash');
@@ -16,16 +17,22 @@ module.exports = function(mycro) {
                 cb(null, link);
             }
         },
-        processResource(resource, cb) {
-            if (_.isFunction(resource.toObject)) {
+        processResource(resource) {
+            if (typeof resource.toObject === 'function') {
                 resource = resource.toObject({getters: true});
+            } else if (resource instanceof mongoose.Types.ObjectId) {
+                resource = resource.toString();
             }
-            cb(null, resource);
+            return resource;
         }
     });
 
     serializer.on('error', function(err) {
-        mycro.log('error', err);
+        let error = _.pick(err, ['status', 'title', 'detail']);
+        if (!Object.keys(error).length) {
+            error = err.message || err;
+        }
+        mycro.log('error', error);
     });
 
     serializer.initialize = function(done) {

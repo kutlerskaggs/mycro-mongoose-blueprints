@@ -8,7 +8,7 @@ qs = require('qs'),
 sinon = require('sinon'),
 _ = require('lodash');
 
-describe('find', function() {
+describe('query', function() {
     let defaultHeaders = { 'accept-version': '^1.0.0' };
     let kanye, tim;
 
@@ -213,8 +213,6 @@ describe('find', function() {
     });
 
     context('page', function() {
-        it('should allow the server to explicitly control pagination');
-
         it('should allow the server to set allowed pagination settings', function(done) {
             async.parallel([
                 function(fn) {

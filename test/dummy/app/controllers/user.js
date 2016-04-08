@@ -5,6 +5,26 @@ var async = require('async'),
     _ = require('lodash');
 
 module.exports = {
+    create(req, res) {
+        let mycro = req.mycro;
+        async.waterfall([
+            function createRecord(fn) {
+                mycro.services.mongoose.create(req, {
+                    processQuery(query, cb) {
+                        mycro.services.serializer.deserialize(query.data, function(err, data) {
+                            _.extend(query, {
+                                data: data.user ? _.pick(data.user, ['first', 'last', 'email', 'secret', 'phone']) : null
+                            });
+                            console.log(JSON.stringify(query.data));
+                            cb();
+                        });
+                    }
+                }, mycro.services.error.wrapError(500, 'Create Error', true, fn));
+            }
+        ]);
+    },
+
+
     findFieldsDisabled(req, res) {
         let mycro = req.mycro,
             error = mycro.services.error;

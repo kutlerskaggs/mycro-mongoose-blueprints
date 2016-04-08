@@ -43,6 +43,13 @@ module.exports = function(mycro) {
                     '/query-policy': {
                         additionalPolicies: ['posts/query'],
                         get: 'mongoose.query'
+                    },
+                    '/:id': {
+                        get: 'mongoose.detail',
+                        '/query-policy': {
+                            additionalPolicies: ['posts/query'],
+                            get: 'mongoose.detail'
+                        }
                     }
                 },
                 '/users': {
@@ -50,6 +57,7 @@ module.exports = function(mycro) {
                         model: 'user'
                     },
                     get: 'mongoose.query',
+                    post: 'mongoose.create',
                     '/fields-whitelist': {
                         additionalPolicies: [
                             mycro.policies['query-fields']('whitelist', ['first', 'last'])
@@ -71,6 +79,9 @@ module.exports = function(mycro) {
                             mycro.policies['query-filter']('whitelist', ['department'])
                         ],
                         get: 'mongoose.query'
+                    },
+                    '/:id': {
+                        post: 'user.create'
                     }
                 }
             },

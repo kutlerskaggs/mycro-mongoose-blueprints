@@ -1,6 +1,7 @@
 'use strict';
 
-var async = require('async');
+var async = require('async'),
+    _ = require('lodash');
 
 module.exports = function(done) {
     let mycro = this;
@@ -34,8 +35,15 @@ module.exports = function(done) {
         },
 
         function error(fn) {
-            mycro.services.error.wrapError = function(status, title, cb) {
-                return function(err) {
+            mycro.services.error.wrapError = function(status, title, intercept, cb) {
+                // handle optional intercept argument
+                if (_.isFunction(intercept)) {
+                    cb = intercept;
+                    intercept = false;
+                }
+
+                // define return function
+                let callback = function(err) {
                     if (err) {
                         return cb({
                             status: status,
@@ -47,8 +55,14 @@ module.exports = function(done) {
                     for (var i = 0; i < arguments.length; i++) {
                         args.push(arguments[i]);
                     }
-                    cb.apply(null, args);
-                };
+                    cb.apply(this, args);
+                }.bind(this);
+
+                // intercept the return function if applicable
+                if (intercept === true) {
+                    callback = mycro.services.error.intercept(false, callback, this);
+                }
+                return callback;
             };
             fn();
         }
